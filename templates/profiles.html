@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Profiles
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="margin-left: 200px;">
+    <h1>Пользователи</h1>
+    <ul class="list-group">
+        {% for profile in profiles %}
+            <li class="list-group-item">
+                <a href="{{ url_for('view_profile', profile_id=profile['id']) }}">{{ profile['username'] }}</a>
+                <div style="float: right;">
+                    <a href="{{ url_for('edit_profile', profile_id=profile['id']) }}" class="btn btn-primary btn-sm">Редактировать</a>
+                    <form action="{{ url_for('delete_profile', profile_id=profile['id']) }}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Вы уверены?')">Удалить</button>
+                    </form>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('create_profile') }}" class="btn btn-primary mt-2">Создать пользователя</a>
+</div>
+   
+{% endblock %}
