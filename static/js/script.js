@@ -1,87 +1,102 @@
-// document.addEventListener('DOMContentLoaded', function() {
-//     // Fetch posts data
-//     fetch('/posts')
-//         .then(response => {
-//             if (!response.ok) {
-//                 throw new Error('Network response was not ok');
-//             }
-//             return response.json();
-//         })
-//         .then(posts => {
-//             // Process received posts data
-//             posts.forEach(function(post) {
-//                 let card = $('<div>').addClass("card mt-3");
-//                 if (post.filename) {
-//                     let imgElement = $("<img>").addClass("card-img-top").attr("src", post.filename).attr("alt", "Image description");
-//                     card.append(imgElement);
-//                 }
-//                 let cardBody = $('<div>').addClass('card-body');
-//                 card.append(cardBody);
+'use strict';
 
-//                 if (post.title) {
-//                     let titleElement = $("<h5>").addClass("card-title").text(post.title);
-//                     cardBody.append(titleElement);
-//                 }
-//                 if (post.content) {
-//                     let contentElement = $("<h6>").addClass("card-content").text(post.content);
-//                     cardBody.append(contentElement);
-//                 }
-//                 $("#wall").append(card);
-//             });
-//         })
-//         .catch(error => {
-//             console.error("Error", error);
-//         });
 
-//     // Event listener for form submission
-//     document.querySelector('#postForm').addEventListener('submit', function(event) {
-//         event.preventDefault();
-//         var fileInput = document.getElementById('postFile').files[0];
-//         var postTitle = document.getElementById('postTitle').value;
-//         var postContent = document.getElementById('postText').value;
-//         var formData = new FormData();
+document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('submit', function (event) {
+        if (event.target.classList.contains('delete-post-form')) {
+            event.preventDefault();
+            const postId = event.target.querySelector('input[name="post_id"]').value;
+            deletePost(postId, event.target);
+        }
+    });
+});
 
-//         formData.append('file', fileInput);
-//         formData.append('title', postTitle);
-//         formData.append('content', postContent);
+function submitPost() {
+    const title = document.getElementById('input_title').value;
+    const text = document.getElementById('input_textarea').value;
+    const photo = document.getElementById('input_img').files[0];
 
-//         fetch('/posts/create_post', {
-//                 method: 'POST',
-//                 body: formData
-//             })
-//             .then(response => {
-//                 if (!response.ok) {
-//                     throw new Error('Error creating post');
-//                 }
-//                 document.getElementById('postTitle').value = "";
-//                 document.getElementById('postFile').value = "";
-//                 document.getElementById('postText').value = "";
-//                 return response.json();
-//             })
-//             .then(post => {
-//                 console.log("Received post data:", post);
-//                 let card = $('<div>').addClass('card mt-3');
+    // Validating data
+    if (!title || !text || !photo) {
+        displayNotification('Fill everything');
+        return;
+    }
 
-//                 if (post.filename) {
-//                     let imgElement = $('<img>').addClass('card-img-top').attr("src", post.filename).attr("alt", "Image description");
-//                     card.append(imgElement);
-//                 }
-//                 let cardBody = $('<div>').addClass('card-body');
-//                 card.append(cardBody);
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('photo', photo);
+    formData.append('text', text);
 
-//                 if (post.title) {
-//                     let titleElement = $("<h5>").addClass('card-title').text(post.title);
-//                     cardBody.append(titleElement);
-//                 }
-//                 if (post.content) {
-//                     let contentElement = $('<h6>').addClass('card-content').text(post.content);
-//                     cardBody.append(contentElement);
-//                 }
+    fetch("/post", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Error posting data");
+        }
+        return response.json();
+    })
+    .then(data => {
+        displayNotification("Post created successfully!");
+        window.location.href = "/posts"; 
+    })
+    .catch(error => {
+        displayNotification("Error creating post.");
+        console.error("Error:", error);
+    });
+}
 
-//                 $('#wall').append(card);
-//             })
-//             .catch(error => {
-//                 console.error('Error post', error);
-//             });
-//     });
-// });
+// Displaying a notification
+function displayNotification(message) {
+    const notification = document.getElementById("notification");
+    notification.innerHTML = message;
+}
+
+// redirecting after deleting
+function deleteAndRedirect(postId) {
+    fetch(`/delete-post/${JSON.parse(postId)}`, {
+        method: 'DELETE',
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error deleting post');
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('Post deleted successfully');
+        window.location.href = "/posts"; 
+    })
+    .catch(error => {
+        alert('Error deleting post.');
+        console.error('Error:', error);
+    });
+}
+
+
+
+// Update the displaySearchResults function in your scripts.js file
+function displaySearchResults(results) {
+    const usersContainer = $('.con');
+
+    // Clear the current content in the "Users:" section
+    usersContainer.html('');
+
+    if (results.length === 0) {
+        usersContainer.html('<p>No users found.</p>');
+        return;
+    }
+
+    // Display search results in the "Users:" section
+    results.forEach(post => {
+        const postElement = $('<div>').addClass('gen_posts mb-5 text-center');
+        postElement.html(`
+            <h2>${post.title}</h2>
+            ${post.photo ? `<img src="${post.photo}" alt="Post Photo" width="600" class="img-fluid">` : ''}
+            <p class="post_text mb-0">${post.text}</p>
+        `);
+        usersContainer.append(postElement);
+    });
+}
+

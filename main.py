@@ -6,68 +6,117 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 CORS(app) 
 
-client_app_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..' , 'client'))
-print(client_app_path)
+UPLOAD_FOLDER = 'img'
 
-if not os.path.exists('images'):
-    os.makedirs('images')
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+CORS(app)
+def read_posts_from_file():
+    try:
+        with open('data.json', 'r') as file:
+            content = file.read()
+            posts = json.loads(content) if content else []
+            return posts if isinstance(posts, list) else []
+    except FileNotFoundError:
+        return []
+    except json.JSONDecodeError as e:
+        print("Error decoding JSON:", str(e))
+        return []
+    
+@app.route('/posts', methods=['GET'])
+def display_posts():
+    posts = read_posts_from_file()
 
-@app.route('/posts/create_post', methods=['POST'])
+    if request.headers.get('Content-Type') == 'application/json':
+        return jsonify(posts)
+
+    return render_template('posts.html', posts=posts)
+
+
+
+@app.route('/create')
+def create():
+    return render_template('create.html')
+
+@app.route('/post', methods=['POST'])
 def create_post():
     try:
-        file = request.files.get('file') 
-        title = request.form.get('title','') 
-        content = request.form.get('content','') 
-        filename = None  
-        
-        if file: 
-            filename = os.path.join(client_app_path, 'images', file.filename)
-            print(filename)
-            file.save(filename) 
+        title = request.form.get('title')
+        text = request.form.get('text')
+        photo = request.files['photo']
 
-        post_info = {
-            'filename': f"images/{file.filename}",
-            'title': title, 
-            'content': content
+        posts = read_posts_from_file()
+        try:
+            if photo:
+                filename = secure_filename(photo.filename)
+                filepath = os.path.join('static', 'img', filename)
+                photo.save(filepath)
+            else:
+                filename = None
+        except (FileNotFoundError, PermissionError) as e:
+            print("Error saving file:", str(e))
+            return jsonify({"error": f"Error saving file: {str(e)}"}), 500
+
+        new_post = {
+            "title": title,
+            "text": text,
+            "photo": f"/static/img/{filename}"
         }
+        posts.append(new_post)
 
-        existing_data = [] 
-        if os.path.exists('posts.json'): 
-            with open('post.json', 'r', encoding='utf-8') as file: 
-                existing_data = json.load(file) 
-        existing_data.append(post_info)
+        with open('posts.json', 'w') as file:
+            json.dump(posts, file, indent=2)
 
-        with open('posts.json', 'w', encoding='utf-8') as file: 
-            json.dump(existing_data, file, indent=2) 
-        
-        response_data = {
-            'message': 'Post created successfully', 
-            'filename': filename, 
-            'title': title, 
-            'content': content, 
-        }
-
-        return jsonify(response_data), 201 
+        return jsonify({"message": "Post created successfully"})
     except Exception as e:
-        error_message = str(e)
-        print("Error:", error_message)  # Log the error
-        response_data = {'error': error_message}
-        return jsonify(response_data), 500
+        print("Error creating post:", str(e))
+        return jsonify({"error": "Error creating post"}), 500
+
+
+
+@app.route('/search', methods=['POST'])
+def search_posts():
+    search_term = request.json.get('search_term', '').lower()
+    posts = read_posts_from_file()
+
+    filtered_posts = [post for post in posts if search_term in post['title'].lower()]
+
+    return jsonify(filtered_posts)
+
+@app.route('/delete-post/<int:post_id>', methods=['DELETE'])
+def delete_post(post_id):
+    try:
+        posts = read_posts_from_file()
+
+        if 0 < post_id <= len(posts):
+            deleted_post = posts.pop(post_id - 1)
+
+            with open('data.json', 'w') as file:
+                json.dump(posts, file, indent=2)
+
+            return jsonify({
+                "message": "Post deleted successfully",
+                "deleted_post": deleted_post
+            })
+        else:
+            return jsonify({"error": "Invalid post ID"}), 400
+    except Exception as e:
+        print("Error deleting post:", str(e))
+        return jsonify({"error": "Error deleting post"}), 500
+
+
 def load_data(filename):
     if os.path.exists(filename):
         with open(filename, 'r', encoding='utf-8') as file:
             return json.load(file)
     else:
         return []
-@app.route('/posts') 
-def view_post():
-    return render_template('posts.html', posts = posts)
+    
 def save_profiles(data):
     with open('profiles.json', 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
 
 profiles = load_data('profiles.json')  
-posts = load_data('posts.json')
 
 @app.route('/')
 def list_profiles():
