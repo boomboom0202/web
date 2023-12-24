@@ -11,17 +11,15 @@ UPLOAD_FOLDER = 'img'
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 CORS(app)
+
+
 def read_posts_from_file():
     try:
-        with open('data.json', 'r') as file:
-            content = file.read()
-            posts = json.loads(content) if content else []
-            return posts if isinstance(posts, list) else []
+        with open('posts.json', 'r') as file:
+            posts = json.load(file)
     except FileNotFoundError:
-        return []
-    except json.JSONDecodeError as e:
-        print("Error decoding JSON:", str(e))
-        return []
+        posts = []
+    return posts
     
 @app.route('/posts', methods=['GET'])
 def display_posts():
@@ -62,9 +60,9 @@ def create_post():
             "text": text,
             "photo": f"/static/img/{filename}"
         }
-        posts.append(new_post)
 
         with open('posts.json', 'w') as file:
+            posts.append(new_post)
             json.dump(posts, file, indent=2)
 
         return jsonify({"message": "Post created successfully"})
@@ -72,6 +70,38 @@ def create_post():
         print("Error creating post:", str(e))
         return jsonify({"error": "Error creating post"}), 500
 
+@app.route('/post/delete', methods=['POST'])
+def delete_post():
+    try:
+        data = request.get_json()
+        post_id = data.get('post_id')
+
+        if post_id is None:
+            return jsonify({"error": "No post_id provided"}), 400
+
+        posts = read_posts_from_file()
+
+        data = request.get_json()
+        post_id = int(data.get('post_id'))  # Convert post_id to integer
+
+        # Then perform the comparison or any other operations
+        if post_id < 0 or post_id >= len(posts):
+            return jsonify({"error": "Invalid post index"}), 400
+
+        deleted_post = posts.pop(post_id)
+
+        # Delete associated photo if exists
+        photo_path = deleted_post.get('photo')
+        if photo_path and os.path.exists(photo_path):
+            os.remove(photo_path)
+
+        with open('posts.json', 'w') as file:
+            json.dump(posts, file, indent=2)
+
+        return jsonify({"message": "Post deleted successfully"})
+    except Exception as e:
+        print("Error deleting post:", str(e))
+        return jsonify({"error": "Error deleting post"}), 500
 
 
 @app.route('/search', methods=['POST'])
@@ -82,27 +112,6 @@ def search_posts():
     filtered_posts = [post for post in posts if search_term in post['title'].lower()]
 
     return jsonify(filtered_posts)
-
-@app.route('/delete-post/<int:post_id>', methods=['DELETE'])
-def delete_post(post_id):
-    try:
-        posts = read_posts_from_file()
-
-        if 0 < post_id <= len(posts):
-            deleted_post = posts.pop(post_id - 1)
-
-            with open('data.json', 'w') as file:
-                json.dump(posts, file, indent=2)
-
-            return jsonify({
-                "message": "Post deleted successfully",
-                "deleted_post": deleted_post
-            })
-        else:
-            return jsonify({"error": "Invalid post ID"}), 400
-    except Exception as e:
-        print("Error deleting post:", str(e))
-        return jsonify({"error": "Error deleting post"}), 500
 
 
 def load_data(filename):
@@ -124,7 +133,7 @@ def list_profiles():
 
 @app.route('/profile/<int:profile_id>')
 def view_profile(profile_id):
-    profile = next((p for p in profiles if p['id'] == profile_id), None)
+    profile = next((p for p in profiles if p['id'] == profile_id), None) 
     if profile:
         return render_template('profile.html', profile=profile)
     return 'Profile not found', 404

@@ -53,10 +53,15 @@ function displayNotification(message) {
     notification.innerHTML = message;
 }
 
-// redirecting after deleting
 function deleteAndRedirect(postId) {
-    fetch(`/delete-post/${JSON.parse(postId)}`, {
-        method: 'DELETE',
+    const postIndex = postId - 1; // Adjusting to 0-based indexing
+
+    fetch(`/post/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ post_id: postIndex }) // Sending adjusted postIndex
     })
     .then(response => {
         if (!response.ok) {
@@ -100,3 +105,21 @@ function displaySearchResults(results) {
     });
 }
 
+$(document).ready(function() {
+    $('#searchInput').on('input', function() {
+        const searchInput = $(this).val();
+
+        $.ajax({
+            type: 'POST',
+            url: '/search',
+            contentType: 'application/json;charset=UTF-8',
+            data: JSON.stringify({ 'search_term': searchInput }),
+            success: function(response) {
+                displaySearchResults(response);
+            },
+            error: function(error) {
+                console.error('Error searching for users:', error);
+            }
+        });
+    });
+});

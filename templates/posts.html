@@ -1,127 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" href="/static/css/style.css">
-  <title>Users</title>
-  <style>
-      body {
-          font-family: 'Arial', sans-serif;
-          background-color: #f8f9fa;
-      }
-
-      header {
-          background-color: #ffffff;
-          border-bottom: 1px solid #dee2e6;
-          padding: 15px 0;
-      }
-
-      .navbar {
-          justify-content: space-between;
-      }
-
-      #searchInput {
-          width: 25%;
-          margin-right: 10px;
-      }
-
-      .btn-create-user {
-          font-size: 15px;
-      }
-
-      .con {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 20px;
-      }
-
-      h1 {
-          margin-bottom: 20px;
-      }
-
-      .gen_users {
-          background-color: #ffffff;
-          border: 1px solid #dee2e6;
-          border-radius: 10px;
-          padding: 20px;
-          margin-bottom: 20px;
-          text-align: center;
-      }
-
-      .user-avatar {
-          width: 100%;
-          max-width: 600px;
-          height: auto;
-          border-radius: 8px;
-          margin-bottom: 10px;
-      }
-
-      .user-description {
-          margin: 0;
-      }
-
-      .delete-user-btn {
-          margin-top: 10px;
-      }
-  </style>
-  </head>
-  <body>
-  <header>
-      <nav class="navbar navbar-expand bg-white">
-          <div class="container-fluid">
-              <input type="text" id="searchInput" class="form-control" placeholder="Search">
-              <a href="{{ url_for('create') }}" class="btn btn-outline-info btn-create-user">Create Post</a>
-          </div>
-      </nav>
-  </header>
 
 
-    <div class="con d-flex flex-column align-items-center">
-        <h1>Users:</h1>
-        {% for post in posts %}
-            <div class="gen_posts mb-5 text-center">
-                <h2>{{ post.title }}</h2>
-                {% if post.photo %}
-                    <img src="{{ post.photo }}" alt="Post Photo" width="600" class="img-fluid">
-                {% endif %}
-                <p class="post_text mb-0">{{ post.text }}</p>
-                <form onsubmit="deleteAndRedirect('{{ loop.index }}'); return false;">
-                    <input type="hidden" name="post_id" value="{{ loop.index }}">
-                    <button type="submit" class="btn btn-outline-danger delete-post-btn">Delete Post</button>
-                </form>
-            </div>
-        {% endfor %}
+{% extends "base.html" %}
+
+{% block content %}
+<header style="margin-left: 200px;">
+    <nav class="navbar navbar-expand bg-white">
+        <div class="container-fluid">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search">
+            <a href="{{ url_for('create') }}" class="btn btn-outline-info btn-create-user" style="margin-left: 100px;">Create Post</a>
+        </div>
+    </nav>
+</header>
+
+<div class="con d-flex flex-column align-items-center" style="margin-left: 200px;">
+    <h1>Users:</h1>
+    {% for post in posts %}
+    <div class="gen_posts mb-5 text-center">
+        <h2>{{ post.title }}</h2>
+        {% if post.photo %}
+        <img src="{{ post.photo }}" alt="Post Photo" width="600" class="img-fluid">
+        {% endif %}
+        <p class="post_text mb-0">{{ post.text }}</p>
+        <form onsubmit="deleteAndRedirect('{{ loop.index }}'); return false;">
+            <input type="hidden" name="post_id" value="{{ loop.index }}">
+            <button type="submit" class="btn btn-outline-danger delete-post-btn">Delete Post</button>
+        </form>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script src="/static/js/script.js"></script>
-    <!-- Add this script block to your posts.html file -->
-<script>
-    $(document).ready(function() {
-        // Attach an event listener to the search input
-        $('#searchInput').on('input', function() {
-            // Get the search term from the input
-            const searchInput = $(this).val();
-
-            $.ajax({
-                type: 'POST',
-                url: '/search',
-                contentType: 'application/json;charset=UTF-8',
-                data: JSON.stringify({ 'search_term': searchInput }),
-                success: function(response) {
-                    displaySearchResults(response);
-                },
-                error: function(error) {
-                    console.error('Error searching for users:', error);
-                }
-            });
-        });
-    });
-</script>
-
-</body>
-</html>
+    {% endfor %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+{% endblock %}
