@@ -1,20 +1,14 @@
 [
     {
         "id": 1,
-        "username": "Айдос",
-        "email": "aidos@example.com",
-        "bio": "Пользователь Айдос"
+        "username": "Abylai",
+        "email": "abylaikhan.suev.02@gmail.com",
+        "bio": "qwerty"
     },
     {
         "id": 2,
-        "username": "Айжан",
-        "email": "aiyzhan@example.com",
-        "bio": "Пользователь Айжан"
-    },
-    {
-        "id": 4,
-        "username": "Дания",
-        "email": "daniyar@example.com",
-        "bio": "Пользователь Данияр"
+        "username": "Abylai",
+        "email": "abylaikhan.suev.02@gmail.com",
+        "bio": ""
     }
 ]
