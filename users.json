@@ -1,0 +1,12 @@
+[
+    {
+        "email": "abylai@mail.ru",
+        "password": "$2b$12$cOo2FOCWUMgYcqpyVIycFuLkQmm0TbWyd7yj0.u2ojQNEeKDtnZgK",
+        "access_level": "user"
+    },
+    {
+        "email": "abb@gmail.com",
+        "password": "$2b$12$C17tFcijbaV3vQE9ytOEwuLvv0AA5Ovj6/mLckxFdhyp0HnWiIA76",
+        "access_level": "user"
+    }
+]

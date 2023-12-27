@@ -1,8 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+import bcrypt
+import datetime
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 import json
 import os
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from flask_cors import CORS 
 from werkzeug.utils import secure_filename
+from flask_bcrypt import Bcrypt
+from flask_sslify import SSLify
 app = Flask(__name__)
 CORS(app) 
 
@@ -11,6 +16,76 @@ UPLOAD_FOLDER = 'img'
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 CORS(app)
+
+# Настройка JWT-модуля
+
+sslify = SSLify(app)
+app.config['JWT_SECRET_KEY'] = 'your_secret_key'  # Установите свой секретный ключ
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
+
+
+def load_data(filename):
+    with open(filename, 'r') as file:
+        data = json.load(file)
+    return data
+    
+
+
+
+users = load_data('users.json')
+
+
+@app.route('/authenticate', methods=['POST'])
+def authenticate():
+  data = request.get_json()
+  email = data.get('email')
+  password = data.get('password')
+
+  user = next((user for user in users if user['email'] == email), None)
+
+  if user and bcrypt.check_password_hash(user['password'], password):
+    access_token = create_access_token(identity={
+        'email': email,
+        'access_level': user['access_level']
+    })
+    return jsonify({'token': access_token}), 200
+
+  return jsonify({'message': 'Invalid credentials'}), 401
+
+
+@app.route('/index', methods=['GET'])
+@jwt_required()
+def list_profiles():
+    current_user = get_jwt_identity()
+    return render_template('profiles.html', profiles = profiles, current_user = current_user)
+
+# Функция сохранения данных в файл
+def save_data():
+  with open('users.json', 'w') as users_file:
+    json.dump(users, users_file, indent=4)
+@app.route('/register', methods=['POST'])
+def register():
+  data = request.get_json()
+  email = data.get('email')
+  password = data.get('password')
+
+  # Проверяем, что пользователь с таким email не зарегистрирован
+  if next((user for user in users if user['email'] == email), None):
+    return jsonify({'message':
+                    'User with this email is already registered'}), 400
+
+  hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+  new_user = {
+      'email': email,
+      'password': hashed_password,
+      'access_level': 'user'
+  }
+  users.append(new_user)
+
+  save_data()  # Сохраняем данные в файл
+  return jsonify({'message': 'Registration successful'}), 200
+
 
 
 def read_posts_from_file():
@@ -31,6 +106,9 @@ def display_posts():
     return render_template('posts.html', posts=posts)
 
 
+@app.route('/')
+def form():
+    return render_template('login.html')
 
 @app.route('/create')
 def create():
@@ -114,22 +192,13 @@ def search_posts():
     return jsonify(filtered_posts)
 
 
-def load_data(filename):
-    if os.path.exists(filename):
-        with open(filename, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    else:
-        return []
-    
+
 def save_profiles(data):
     with open('profiles.json', 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
 
 profiles = load_data('profiles.json')  
-
-@app.route('/')
-def list_profiles():
-    return render_template('profiles.html', profiles=profiles)
+# Защищенный маршрут
 
 @app.route('/profile/<int:profile_id>')
 def view_profile(profile_id):

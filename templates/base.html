@@ -1,7 +1,7 @@
     <!DOCTYPE html>
     <html>
     <head>
-        <title>{% block title %}My Website{% endblock %}</title>
+        <title>{% block title %}Social Network app{% endblock %}</title>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
         
@@ -11,10 +11,11 @@
 
             <a href="{{ url_for('display_posts') }}">Новости</a>
             <a href="#">Мессенджер</a>
-            <a href="/">Пользователи</a>
+            <a href="{{ url_for('list_profiles') }}">Пользователи</a>
             <a href="#">Музыка</a>
+            <a href="{{ url_for('form')}}">Войти</a>
         </div>
-
+    
         <div class="container mt-4 ml-5"> 
             {% block content %}{% endblock %}
         </div>
